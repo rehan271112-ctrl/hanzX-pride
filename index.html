@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>hanzX pride - Cyber Engine v65</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- ANDROID APP-LIKE EXPERIENCE --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        /* Menyembunyikan scrollbar bawaan */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        html, body {
+            background-color: #0b0b0e;
+            color: #e4e4e7;
+            height: 100vh;
+            height: 100dvh;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- CONTAINER UTAMA (KUNCI DYNAMIC VIEWPORT AGAR TIDAK HILANG-TIMBUL) --- */
+        #app-viewport {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh; /* Mengunci tinggi dinamis layar HP anti bug Chrome/browser */
+            max-width: 480px;
+            background: #0f0f14;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+        }
+
+        /* --- SPLASH SCREEN LOADING --- */
+        #splash-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f0f14;
+            z-index: 20000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s;
+        }
+
+        .splash-logo {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 1px;
+            animation: pulseGlow 2s infinite ease-in-out;
+            margin-bottom: 20px;
+        }
+        .splash-logo span { color: #00ffaa; }
+
+        .loading-bar-container {
+            width: 120px;
+            height: 2px;
+            background: #1a1a24;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .loading-bar-progress {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #00ffaa, #00bfff);
+            position: absolute;
+            left: -100%;
+            animation: lineLoad 1.8s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.6; transform: scale(0.98); filter: drop-shadow(0 0 0px rgba(0,255,170,0)); }
+            50% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 15px rgba(0,255,170,0.3)); }
+        }
+        @keyframes lineLoad {
+            0% { left: -100%; }
+            50% { left: 0; }
+            100% { left: 100%; }
+        }
+
+        /* --- LAYER LOGIN --- */
+        #login-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f0f14;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .login-card {
+            width: 100%;
+            background: #14141c;
+            border: 1px solid #222230;
+            border-radius: 24px;
+            padding: 28px;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            font-size: 1.6rem;
+            color: #00ffaa;
+            margin-bottom: 8px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .login-card p {
+            font-size: 0.8rem;
+            color: #696984;
+            margin-bottom: 24px;
+        }
+
+        .app-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #1a1a24;
+            border: 1px solid #28283d;
+            border-radius: 14px;
+            color: #fff;
+            outline: none;
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+            user-select: text;
+        }
+
+        .app-input:focus {
+            border-color: #00ffaa;
+            box-shadow: 0 0 10px rgba(0, 255, 170, 0.15);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #00ffaa, #00bfff);
+            border: none;
+            color: #0b0b0e;
+            font-weight: 700;
+            font-size: 1rem;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:active { transform: scale(0.97); }
+
+        /* --- MAIN APP SCREEN --- */
+        .top-app-bar {
+            height: 65px;
+            background: #14141c;
+            border-bottom: 1px solid #1d1d29;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            flex-shrink: 0;
+        }
+
+        .app-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+        }
+        .app-title span { color: #00ffaa; }
+
+        .app-clock {
+            font-family: monospace;
+            font-size: 0.9rem;
+            background: #1a1a24;
+            color: #00bfff;
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-weight: bold;
+            border: 1px solid #252538;
+        }
+
+        .app-sheet-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            /* Ditambah padding bottom agar tidak tertimpa bar navigasi baru yang lebih besar */
+            padding-bottom: 110px; 
+        }
+
+        .panel-view {
+            display: none;
+            animation: fadeInSheet 0.3s ease-out;
+        }
+
+        .panel-view.active { display: block; }
+
+        @keyframes fadeInSheet {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- MODUL WIDGET / CARD --- */
+        .widget-card {
+            background: #14141c;
+            border: 1px solid #1e1e2b;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .widget-title {
+            font-size: 0.85rem;
+            color: #00ffaa;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #1a1a26;
+            font-size: 0.9rem;
+        }
+        .spec-item:last-child { border-bottom: none; }
+        .spec-left { color: #696984; }
+        .spec-right { color: #ffffff; font-weight: 500; }
+
+        .app-list-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #1a1a24;
+            padding: 12px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            border: 1px solid #222233;
+        }
+        .app-list-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #252538;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: #ff4747;
+        }
+
+        /* --- MUSIC DIALOG POPUP OPTION --- */
+        .music-btn {
+            width: 100%;
+            background: #1a1a24;
+            border: 1px solid #252538;
+            color: #fff;
+            padding: 12px;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+        .music-btn:active { background: #252538; border-color: #00ffaa; }
+
+        .music-menu {
+            display: none;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+            animation: fadeInSheet 0.2s ease-out;
+        }
+        .music-menu.open { display: grid; }
+        
+        .music-opt {
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: #fff;
+        }
+        .opt-spotify { background: #1db954; }
+        .opt-ytmusic { background: #ff0000; }
+
+        /* --- CHAT AI SYSTEM INTERFACE --- */
+        .ai-chat-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 185px); 
+            height: calc(100dvh - 185px); 
+        }
+
+        .ai-messages-box {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 2px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .chat-bubble.user {
+            background: #1a1a24;
+            color: #ffffff;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+            border: 1px solid #252538;
+        }
+
+        .chat-bubble.bot {
+            background: #14141c;
+            color: #e4e4e7;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #222230;
+        }
+
+        .chat-bubble.bot span {
+            color: #00ffaa;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .ai-input-container {
+            display: flex;
+            gap: 10px;
+            background: #14141c;
+            padding: 10px;
+            border-radius: 16px;
+            border: 1px solid #222230;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        .ai-input-box {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 0.9rem;
+            padding: 4px 8px;
+            user-select: text;
+        }
+
+        .btn-send-ai {
+            background: #1a1a24;
+            border: 1px solid #2a2a3d;
+            color: #00ffaa;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-send-ai:active { background: #00ffaa; color: #0f0f14; }
+
+        /* --- CONFIG CODES --- */
+        .form-toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #1a1a26;
+        }
+        .form-toggle-row:last-child { border-bottom: none; }
+        
+        .switch-input { opacity: 0; width: 0; height: 0; }
+        .switch-track {
+            position: relative; display: inline-block; width: 44px; height: 24px;
+            background: #252535; border-radius: 20px; cursor: pointer; transition: 0.3s;
+        }
+        .switch-track::after {
+            content: ''; position: absolute; width: 18px; height: 18px;
+            left: 3px; bottom: 3px; background: #696984; border-radius: 50%; transition: 0.3s;
+        }
+        .switch-input:checked + .switch-track { background: #00ffaa33; border: 1px solid #00ffaa; }
+        .switch-input:checked + .switch-track::after { transform: translateX(20px); background: #00ffaa; }
+
+        .range-container { margin-bottom: 16px; }
+        .range-headers { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; }
+        .native-slider {
+            width: 100%; -webkit-appearance: none; background: #252535; height: 6px; border-radius: 4px; outline: none;
+        }
+        .native-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #00ffaa; cursor: pointer;
+        }
+
+        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .btn-action-trigger {
+            background: #1a1a24; border: 1px solid #252538; border-radius: 12px; padding: 12px;
+            color: #fff; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-action-trigger:active { background: #222233; color: #00bfff; border-color: #00bfff; }
+
+        .sholat-row {
+            display: flex; justify-content: space-between; padding: 12px; background: #1a1a24; border-radius: 12px; margin-bottom: 8px;
+        }
+
+        /* --- DI-PERBESAR: FIXED BOTTOM NAVIGATION BAR (ANTI-ILANG) --- */
+        .bottom-navigation-bar {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%;
+            height: 78px; /* Diperbesar dari 65px agar langsung kelihatan menonjol */
+            background: #14141c;
+            border-top: 2px solid #1d1d29; /* Dipertebal line fold-nya */
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 9999;
+            flex-shrink: 0;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+        }
+
+        .nav-action-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #555570;
+            font-size: 0.78rem; /* Ukuran font teks menu diperbesar */
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            flex: 1;
+            height: 100%;
+            gap: 6px;
+            transition: color 0.15s;
+        }
+
+        .nav-action-item i { 
+            font-size: 1.45rem; /* Ukuran ikon tombol navigasi diperbesar agar scannable */
+        }
+        .nav-action-item.active { 
+            color: #00ffaa; 
+            text-shadow: 0 0 10px rgba(0, 255, 170, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-viewport">
+        
+        <div id="splash-screen">
+            <div class="splash-logo">hanzX<span>pride</span></div>
+            <div class="loading-bar-container">
+                <div class="loading-bar-progress"></div>
+            </div>
+        </div>
+
+        <div id="login-screen">
+            <div class="login-card">
+                <h2>hanzX pride</h2>
+                <p>System Engine Authorization - v65</p>
+                <input type="text" id="username" class="app-input" placeholder="Nama Pengguna...">
+                <button class="btn-primary" onclick="handleAppLogin()">Otorisasi Perangkat</button>
+            </div>
+        </div>
+
+        <div class="top-app-bar">
+            <div class="app-title" id="app-identity">PRIDE: <span>GUEST</span></div>
+            <div class="app-clock" id="clock-display">00:00:00</div>
+        </div>
+
+        <div class="app-sheet-content">
+            
+            <div id="view-home" class="panel-view active">
+                <div class="widget-card">
+                    <div class="widget-title"><i class="fa-solid fa-microchip"></i> System Core Info</div>
+                    <div class="spec-item"><span class="spec-left">Version</span><span class="spec-right">v65</span></div>
+                    <div class="spec-item"><span class="spec-left">Developer</span><span class="spec-right" style="color:#00bfff;">rehan</span></div>
+                    <div class="spec-item"><span class="spec-left">Package Status</span><span class="spec-right" style="color:#00ffaa;">Premium Active</span></div>
+                    <div class="spec-item"><span class="spec-left">Architecture</span><span class="spec-right">ARM64-v8a Dual Hook</span></div>
+                    
+                    <button class="music-btn" onclick="toggleMusicMenu()"><i class="fa-solid fa-music" style="color:#00ffaa;"></i> Quick Access Background Music</button>
+                    <div id="music-options" class="music-menu">
+                        <button class="music-opt opt-spotify" onclick="launchMusicApp('spotify')"><i class="fa-brands fa-spotify"></i> Spotify</button>
+                        <button class="music-opt opt-ytmusic" onclick="launchMusicApp('ytmusic')"><i class="fa-solid fa-play"></i> YT Music</button>
+                    </div>
+                </div>
+
+                <div class="widget-title"><i class="fa-solid fa-crosshairs"></i> Target Injector</div>
+                <div class="app-list-item">
+                    <div class="app-list-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
+                    <div>
+                        <div style="font-size:0.9rem; font-weight:700;">Free Fire Max</div>
+                        <div style="font-size:0.75rem; color:#696984;">Ready to bypass layer stability engine.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-pelicin" class="panel-view">
+                <div class="widget-card">
+                    <div class="widget-title"><i class="fa-solid fa-sliders"></i> Analog Range Calibration</div>
+                    <div class="range-container">
+                        <div class="range-headers"><span>Touch Response Delay</span><span id="txt-sensitivitas" style="color:#00ffaa;">50%</span></div>
+                        <input type="range" id="slide-sensitivitas" class="native-slider" min="0" max="100" value="50" oninput="handleSliderChange()">
+                    </div>
+                    <div class="range-container">
+                        <div class="range-headers"><span>Screen Smoothing Frame</span><span id="txt-smoothing" style="color:#00ffaa;">30%</span></div>
+                        <input type="range" id="slide-smoothing" class="native-slider" min="0" max="100" value="30" oninput="handleSliderChange()">
+                    </div>
+                    <div class="range-container">
+                        <div class="range-headers"><span>Sensivitas Layar LCD</span><span id="txt-lcd-sens" style="color:#00ffaa;">60%</span></div>
+                        <input type="range" id="slide-lcd-sens" class="native-slider" min="0" max="100" value="60" oninput="handleSliderChange()">
+                    </div>
+                    <div class="range-container">
+                        <div class="range-headers"><span>Virtual DPI Density</span><span id="txt-dpi" style="color:#00bfff;">411 DPI</span></div>
+                        <input type="range" id="slide-dpi" class="native-slider" min="320" max="960" value="411" oninput="handleSliderChange()">
+                    </div>
+                    <div class="range-container">
+                        <div class="range-headers"><span>Auto Headshot Stabilizer</span><span id="txt-aim-lock" style="color:#ff4747;">0%</span></div>
+                        <input type="range" id="slide-aim-lock" class="native-slider" min="0" max="100" value="0" oninput="handleSliderChange()">
+                    </div>
+                </div>
+
+                <div class="widget-card">
+                    <div class="widget-title"><i class="fa-solid fa-toggle-on"></i> Sub-System Tweak Drivers</div>
+                    <div class="form-toggle-row">
+                        <div><div style="font-size:0.9rem; font-weight:500;">Super Gacor Panel Mode</div><div style="font-size:0.75rem; color:#696984;">Akselerasi penuh performa hardware.</div></div>
+                        <label><input type="checkbox" id="sw-pelicin" class="switch-input" onchange="storePelicinData()"><div class="switch-track"></div></label>
+                    </div>
+                    <div class="form-toggle-row">
+                        <div><div style="font-size:0.9rem; font-weight:500;">Zero Friction Layer</div><div style="font-size:0.75rem; color:#696984;">Menghilangkan hambatan gesek.</div></div>
+                        <label><input type="checkbox" id="sw-friction" class="switch-input" onchange="storePelicinData()"><div class="switch-track"></div></label>
+                    </div>
+                    <div class="form-toggle-row">
+                        <div><div style="font-size:0.9rem; font-weight:500;">Frame Rate Booster (90 FPS)</div><div style="font-size:0.75rem; color:#696984;">Memaksa engine merender frame tertinggi.</div></div>
+                        <label><input type="checkbox" id="sw-fps" class="switch-input" onchange="storePelicinData()"><div class="switch-track"></div></label>
+                    </div>
+                    <div class="form-toggle-row">
+                        <div><div style="font-size:0.9rem; font-weight:500;">Anti-Drop FPS Engine</div><div style="font-size:0.75rem; color:#696984;">Mencegah patah-patah saat perang ramai.</div></div>
+                        <label><input type="checkbox" id="sw-antidrop" class="switch-input" onchange="storePelicinData()"><div class="switch-track"></div></label>
+                    </div>
+                </div>
+
+                <div class="widget-card">
+                    <div class="widget-title"><i class="fa-solid fa-bolt"></i> Hardware Command Injector</div>
+                    <div class="action-grid">
+                        <button class="btn-action-trigger" onclick="runInstantTweak('RAM Buffer Purge')"><i class="fa-solid fa-broom"></i> Clear Cache</button>
+                        <button class="btn-action-trigger" onclick="runInstantTweak('Bypass Thermal Control')"><i class="fa-solid fa-temperature-arrow-down"></i> Fix Overheat</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-ai" class="panel-view">
+                <div class="ai-chat-wrapper">
+                    <div class="ai-messages-box" id="ai-chat-history">
+                        <div class="chat-bubble bot">
+                            <span>hanzX AI</span>
+                            Halo! Ada yang bisa saya bantu untuk optimasi sistem hanzX pride v65 hari ini? Tulis pertanyaanmu di bawah!
+                        </div>
+                    </div>
+                    
+                    <div class="ai-input-container">
+                        <input type="text" id="ai-query-input" class="ai-input-box" placeholder="Tanya sesuatu ke AI Perplexity..." onkeypress="handleAiEnter(event)">
+                        <button class="btn-send-ai" onclick="sendAiRequest()"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-sholat" class="panel-view">
+                <div class="widget-title"><i class="fa-solid fa-mosque"></i> DKI Jakarta Muslim Prayer Clock</div>
+                <div id="sholat-list-container">
+                    <div style="text-align:center; color:#696984; font-size:0.85rem; padding:20px 0;">Menghubungkan satelit api...</div>
+                </div>
+            </div>
+
+            <div id="view-setting" class="panel-view">
+                <div class="widget-card">
+                    <div class="widget-title"><i class="fa-solid fa-gear"></i> Reset & Session Manager</div>
+                    <button onclick="wipePelicinSetup()" style="width:100%; padding:14px; background:#221414; border:1px solid #441f1f; color:#ff5555; border-radius:12px; font-size:0.85rem; font-weight:600; text-align:left; display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                        <i class="fa-solid fa-trash-can"></i> Wipe All Pelicin Config Presets
+                    </button>
+                    <button onclick="handleAppLogout()" style="width:100%; padding:14px; background:#181824; border:1px solid #28283d; color:#ffffff; border-radius:12px; font-size:0.85rem; font-weight:600; text-align:left; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-power-off" style="color:#ff3333;"></i> Destroy Login Token Session
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-navigation-bar">
+            <div class="nav-action-item active" onclick="navigateSheet('home', this)"><i class="fa-solid fa-house"></i><span>Home</span></div>
+            <div class="nav-action-item" onclick="navigateSheet('pelicin', this)"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Pelicin</span></div>
+            <div class="nav-action-item" onclick="navigateSheet('ai', this)" style="color: #00ffaa; font-weight:800;"><i class="fa-solid fa-brain"></i><span>AI Chat</span></div>
+            <div class="nav-action-item" onclick="navigateSheet('sholat', this); fetchPrayerSchedule();"><i class="fa-solid fa-clock"></i><span>Waktu</span></div>
+            <div class="nav-action-item" onclick="navigateSheet('setting', this)"><i class="fa-solid fa-sliders"></i><span>Tweak</span></div>
+        </div>
+
+    </div>
+
+    <script>
+        window.onload = function() {
+            startClockTicker();
+            loadPelicinSetup();
+
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                splash.style.opacity = '0';
+                splash.style.visibility = 'hidden';
+                validateLoginState();
+            }, 2200);
+        };
+
+        function startClockTicker() {
+            setInterval(() => {
+                const n = new Date();
+                document.getElementById('clock-display').innerText = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+            }, 1000);
+        }
+
+        function handleAppLogin() {
+            const user = document.getElementById('username').value.trim() || "Guest Developer";
+            localStorage.setItem('h_session_v65', user);
+            validateLoginState();
+        }
+
+        function validateLoginState() {
+            const saved = localStorage.getItem('h_session_v65');
+            if (saved) {
+                document.getElementById('login-screen').style.transform = 'translateY(-100%)';
+                document.getElementById('app-identity').innerHTML = `PRIDE: <span>${saved}</span>`;
+            } else {
+                document.getElementById('login-screen').style.transform = 'translateY(0)';
+            }
+        }
+
+        function handleAppLogout() {
+            localStorage.removeItem('h_session_v65');
+            document.getElementById('username').value = "";
+            validateLoginState();
+        }
+
+        function navigateSheet(targetId, element) {
+            document.querySelectorAll('.panel-view').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-action-item').forEach(i => i.classList.remove('active'));
+            document.getElementById(`view-${targetId}`).classList.add('active');
+            element.classList.add('active');
+        }
+
+        function toggleMusicMenu() {
+            document.getElementById('music-options').classList.toggle('open');
+        }
+
+        function launchMusicApp(platform) {
+            if (platform === 'spotify') {
+                window.open('spotify:search', '_blank');
+                setTimeout(() => { window.open('https://open.spotify.com/search', '_blank'); }, 500);
+            } else if (platform === 'ytmusic') {
+                window.open('https://music.youtube.com/search', '_blank');
+            }
+        }
+
+        async function aiPerplexity(query) {
+            try {
+                const url = "http://api.ikyyxd.my.id/ai/perplexity?query=" + encodeURIComponent(query);
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 30000);
+                
+                const res = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeout);
+                const data = await res.json();
+                return data.result || JSON.stringify(data);
+            } catch (err) {
+                return "Terjadi error internal: " + err.message;
+            }
+        }
+
+        async function sendAiRequest() {
+            const inputEl = document.getElementById('ai-query-input');
+            const query = inputEl.value.trim();
+            if (!query) return;
+
+            const chatHistory = document.getElementById('ai-chat-history');
+
+            const userBubble = document.createElement('div');
+            userBubble.className = 'chat-bubble user';
+            userBubble.innerText = query;
+            chatHistory.appendChild(userBubble);
+
+            inputEl.value = '';
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            const botBubble = document.createElement('div');
+            botBubble.className = 'chat-bubble bot';
+            botBubble.innerHTML = `<span>hanzX AI</span><i class="fa-solid fa-spinner fa-spin"></i> Sedang memproses...`;
+            chatHistory.appendChild(botBubble);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            const answer = await aiPerplexity(query);
+            botBubble.innerHTML = `<span>hanzX AI</span>${answer}`;
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function handleAiEnter(event) {
+            if (event.key === 'Enter') {
+                sendAiRequest();
+            }
+        }
+
+        function handleSliderChange() {
+            const sens = document.getElementById('slide-sensitivitas').value;
+            const smooth = document.getElementById('slide-smoothing').value;
+            const lcdSens = document.getElementById('slide-lcd-sens').value;
+            const dpi = document.getElementById('slide-dpi').value;
+            const aimLock = document.getElementById('slide-aim-lock').value;
+
+            document.getElementById('txt-sensitivitas').innerText = sens + '%';
+            document.getElementById('txt-smoothing').innerText = smooth + '%';
+            document.getElementById('txt-lcd-sens').innerText = lcdSens + '%';
+            document.getElementById('txt-dpi').innerText = dpi + ' DPI';
+            document.getElementById('txt-aim-lock').innerText = aimLock + '%';
+            storePelicinData();
+        }
+
+        function storePelicinData() {
+            const config = {
+                active: document.getElementById('sw-pelicin').checked,
+                sensitivitas: document.getElementById('slide-sensitivitas').value,
+                smoothing: document.getElementById('slide-smoothing').value,
+                lcdSens: document.getElementById('slide-lcd-sens').value,
+                dpi: document.getElementById('slide-dpi').value,
+                aimLock: document.getElementById('slide-aim-lock').value,
+                friction: document.getElementById('sw-friction').checked,
+                fps: document.getElementById('sw-fps').checked,
+                antidrop: document.getElementById('sw-antidrop').checked
+            };
+            localStorage.setItem('h_tweak_v65', JSON.stringify(config));
+        }
+
+        function loadPelicinSetup() {
+            const data = localStorage.getItem('h_tweak_v65');
+            if (data) {
+                const c = JSON.parse(data);
+                document.getElementById('sw-pelicin').checked = c.active || false;
+                document.getElementById('slide-sensitivitas').value = c.sensitivitas || 50;
+                document.getElementById('slide-smoothing').value = c.smoothing || 30;
+                if(document.getElementById('slide-lcd-sens')) document.getElementById('slide-lcd-sens').value = c.lcdSens || 60;
+                document.getElementById('slide-dpi').value = c.dpi || 411;
+                if(document.getElementById('slide-aim-lock')) document.getElementById('slide-aim-lock').value = c.aimLock || 0;
+                document.getElementById('sw-friction').checked = c.friction || false;
+                if(document.getElementById('sw-fps')) document.getElementById('sw-fps').checked = c.fps || false;
+                if(document.getElementById('sw-antidrop')) document.getElementById('sw-antidrop').checked = c.antidrop || false;
+                handleSliderChange();
+            }
+        }
+
+        function runInstantTweak(title) {
+            alert(`[System Hook OS Execution]\nCommand: ${title} sukses dijalankan!`);
+        }
+
+        function wipePelicinSetup() {
+            localStorage.removeItem('h_tweak_v65');
+            location.reload();
+        }
+
+        function fetchPrayerSchedule() {
+            const box = document.getElementById('sholat-list-container');
+            box.innerHTML = '<div style="text-align:center; color:#696984; font-size:0.85rem; padding:20px 0;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching api timings...</div>';
+            
+            fetch('https://api.aladhan.com/v1/timingsByCity?city=Jakarta&country=Indonesia&method=2')
+                .then(r => r.json())
+                .then(d => {
+                    if (d?.data?.timings) {
+                        const t = d.data.timings;
+                        const list = [
+                            { n: 'Subuh', v: t.Fajr }, { n: 'Dzuhur', v: t.Dhuhr },
+                            { n: 'Ashar', v: t.Asr }, { n: 'Maghrib', v: t.Maghrib }, { n: 'Isya', v: t.Isha }
+                        ];
+                        let html = '';
+                        list.forEach(s => {
+                            html += `<div class="sholat-row"><div style="display:flex; align-items:center; gap:8px;"><i class="fa-regular fa-bell" style="color:#00ffaa;"></i> <b>${s.n}</b></div><span style="font-family:monospace; color:#00bfff; font-weight:700;">${s.v}</span></div>`;
+                        });
+                        box.innerHTML = html;
+                    }
+                }).catch(() => {
+                    box.innerHTML = '<div style="text-align:center; color:#ff5555; font-size:0.85rem; padding:20px 0;">Gagal memuat API.</div>';
+                });
+        }
+    </script>
+</body>
+</html>
